@@ -1,0 +1,92 @@
+/**
+ * layout.css —— 页面骨架布局
+ * 职责：PC 双栏、移动端单栏、断点切换；只定义尺寸与排列，不定义组件皮肤。
+ */
+
+.app {
+  display: flex;
+  width: 100vw;
+  height: 100vh;
+  height: 100dvh;
+  gap: var(--page-gap);
+  padding: var(--page-gap);
+  overflow: hidden;
+}
+
+/* 左栏：直播屏 + 礼物区 */
+.stage-column {
+  display: flex;
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: 0;
+  flex-direction: column;
+}
+
+.live-area {
+  position: relative;
+  display: flex;
+  flex: 1 1 auto;
+  align-items: center;
+  justify-content: center;
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* 16:9 舞台：JS 依据可用空间精确计算宽高，CSS 提供无 JS 时的兜底 */
+.live-stage {
+  position: relative;
+  flex: 0 0 auto;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+}
+
+/* 右栏：主播卡 + 弹幕列表 + 输入栏 */
+.side-panel {
+  display: flex;
+  flex: 0 0 auto;
+  flex-direction: column;
+  width: clamp(300px, 24vw, 380px);
+  min-height: 0;
+  overflow: hidden;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-1);
+}
+
+/* ===== 移动端单列（视口宽 < 1024px） ===== */
+@media (max-width: 1023px) {
+  .app {
+    flex-direction: column;
+    gap: 0;
+    padding: 0;
+  }
+
+  .stage-column {
+    flex: 0 0 auto;
+    padding: 0 8px;
+  }
+
+  .live-area {
+    display: block;
+    flex: 0 0 auto;
+    overflow: visible;
+  }
+
+  .live-stage {
+    width: 100%;
+    height: auto;
+    aspect-ratio: 16 / 9;
+  }
+
+  .side-panel {
+    width: 100%;
+    flex: 1 1 auto;
+    min-height: 0;
+    background: var(--bg);
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+  }
+}

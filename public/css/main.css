@@ -1,0 +1,339 @@
+/**
+ * main.css —— 全局公共层
+ * 职责：CSS 变量、reset、公共按钮/卡片/滚动条/动画、工具类。
+ * 区域样式（layout/live/panel/modal）只写差异，颜色一律通过变量派生。
+ */
+
+:root {
+  /* 基础配色（§7.2） */
+  --bg: #0f0f13;
+  --panel: #1a1a22;
+  --card: #23232e;
+  --card-hover: #2a2a38;
+  --border: #2f2f3d;
+  --text-1: #e9e9f0;
+  --text-2: #9a9aab;
+  --text-3: #6b6b7c;
+  --bili-pink: #fb7299;
+  --bili-blue: #23ade5;
+  --success: #2ac864;
+  --danger: #f25d5d;
+  --miss: #e04848;
+  --warn: #ffb028;
+  --machine-bg: rgba(255, 255, 255, 0.92);
+  --machine-title: #ff7299;
+  --machine-text: #5b4a52;
+  --machine-bubble: rgba(255, 122, 158, 0.12);
+  --machine-bubble-miss: rgba(224, 72, 72, 0.15);
+  --overlay: rgba(0, 0, 0, 0.6);
+
+  /* 派生变量：保证区域文件不出现硬编码色值 */
+  --text-inverse: #ffffff;
+  --glass: rgba(15, 15, 19, 0.62);
+  --glass-border: rgba(255, 255, 255, 0.14);
+  --success-soft: rgba(42, 200, 100, 0.16);
+  --danger-soft: rgba(242, 93, 93, 0.16);
+  --miss-soft: rgba(224, 72, 72, 0.18);
+  --pink-soft: rgba(251, 114, 153, 0.14);
+  --blue-soft: rgba(35, 173, 229, 0.12);
+  --scroll-thumb: #3a3a4a;
+  --shadow-pink: 0 4px 14px rgba(251, 114, 153, 0.28);
+
+  /* 圆角与投影 */
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --radius-pill: 999px;
+  --shadow-1: 0 2px 8px rgba(0, 0, 0, 0.35);
+  --shadow-2: 0 12px 40px rgba(0, 0, 0, 0.55);
+
+  /* 字号与字体（§7.4） */
+  --font-ui: "PingFang SC", "HarmonyOS Sans SC", "Microsoft YaHei", "Noto Sans SC", "Source Han Sans SC", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-size-base: clamp(13px, 1.05vw, 16px);
+  --font-size-stats: clamp(11px, 0.9vw, 14px);
+  --font-size-machine: clamp(10px, 1.1vw, 15px);
+
+  /* 动效与间距 */
+  --dur: 0.18s;
+  --ease: cubic-bezier(0.22, 0.8, 0.32, 1);
+  --page-gap: 12px;
+}
+
+/* ===== reset ===== */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  height: 100%;
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  overflow: hidden;
+  background: var(--bg);
+  color: var(--text-1);
+  font-family: var(--font-ui);
+  font-size: var(--font-size-base);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+img {
+  display: block;
+  max-width: 100%;
+}
+
+button,
+input {
+  font: inherit;
+  color: inherit;
+}
+
+button {
+  border: 0;
+  background: none;
+  cursor: pointer;
+}
+
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+[hidden] {
+  display: none !important;
+}
+
+::selection {
+  background: var(--bili-pink);
+  color: var(--text-inverse);
+}
+
+/* ===== 公共组件 ===== */
+.card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 36px;
+  padding: 0 18px;
+  border-radius: var(--radius-pill);
+  font-size: inherit;
+  font-weight: 700;
+  line-height: 1;
+  white-space: nowrap;
+  transition: background var(--dur) var(--ease), color var(--dur) var(--ease),
+    border-color var(--dur) var(--ease), transform var(--dur) var(--ease),
+    filter var(--dur) var(--ease);
+}
+
+.btn:active {
+  transform: translateY(1px) scale(0.99);
+}
+
+.btn:focus-visible {
+  outline: 2px solid var(--bili-blue);
+  outline-offset: 2px;
+}
+
+.btn--primary {
+  background: var(--bili-pink);
+  color: var(--text-inverse);
+  box-shadow: var(--shadow-pink);
+}
+
+.btn--primary:hover {
+  filter: brightness(1.06);
+}
+
+.btn--ghost {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text-1);
+}
+
+.btn--ghost:hover {
+  border-color: var(--bili-pink);
+  color: var(--bili-pink);
+}
+
+.btn--block {
+  width: 100%;
+}
+
+/* ===== 公共滚动条（6px 深灰） ===== */
+.scroll-y {
+  scrollbar-width: thin;
+  scrollbar-color: var(--scroll-thumb) transparent;
+  overscroll-behavior: contain;
+}
+
+.scroll-y::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.scroll-y::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.scroll-y::-webkit-scrollbar-thumb {
+  background: var(--scroll-thumb);
+  border-radius: var(--radius-pill);
+}
+
+.scroll-y::-webkit-scrollbar-thumb:hover {
+  background: var(--text-3);
+}
+
+/* ===== 公共动画 ===== */
+@keyframes fade-out {
+  from {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(-4px) scale(0.98);
+  }
+}
+
+@keyframes shake {
+  10%,
+  90% {
+    transform: translateX(-2px);
+  }
+  20%,
+  80% {
+    transform: translateX(4px);
+  }
+  30%,
+  50%,
+  70% {
+    transform: translateX(-6px);
+  }
+  40%,
+  60% {
+    transform: translateX(6px);
+  }
+}
+
+@keyframes pulse {
+  0% {
+    transform: scale(1);
+  }
+  45% {
+    transform: scale(1.16);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes pop-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes float-delta {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, 4px) scale(0.9);
+  }
+  18% {
+    opacity: 1;
+    transform: translate(-50%, -2px) scale(1);
+  }
+  72% {
+    opacity: 1;
+    transform: translate(-50%, -18px) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -28px) scale(1);
+  }
+}
+
+@keyframes breathe {
+  0%,
+  100% {
+    opacity: 0.35;
+    box-shadow: 0 0 2px var(--bili-pink);
+  }
+  50% {
+    opacity: 1;
+    box-shadow: 0 0 12px var(--bili-pink);
+  }
+}
+
+@keyframes warn-flash {
+  0%,
+  100% {
+    border-color: var(--miss);
+    box-shadow: none;
+  }
+  50% {
+    border-color: var(--miss);
+    box-shadow: 0 0 0 2px var(--miss-soft), 0 0 12px var(--miss);
+  }
+}
+
+@keyframes mask-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes modal-in {
+  from {
+    opacity: 0;
+    transform: translateY(16px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* ===== 工具类 ===== */
+.u-hidden {
+  display: none !important;
+}
+
+.u-nowrap {
+  white-space: nowrap;
+}
+
+/* 尊重系统“减少动态效果”偏好 */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

@@ -1,0 +1,346 @@
+/**
+ * panel.css —— 右栏功能面板
+ * 职责：主播卡、弹幕列表与气泡全部状态、连击浮层、输入栏。
+ */
+
+/* ===== 主播卡 ===== */
+.anchor-card {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 10px;
+  margin: 10px 10px 0;
+  padding: 11px 12px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+}
+
+.anchor-card__avatar {
+  flex: 0 0 auto;
+  width: 48px;
+  height: 48px;
+  object-fit: cover;
+  background: var(--card-hover);
+  border: 1px solid var(--border);
+  border-radius: 50%;
+}
+
+.anchor-card__meta {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.anchor-card__name {
+  overflow: hidden;
+  color: var(--text-1);
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 1.35;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.anchor-card__uid {
+  color: var(--text-2);
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.btn--follow {
+  flex: 0 0 auto;
+  min-height: 30px;
+  padding: 0 14px;
+  background: transparent;
+  border: 1px solid var(--bili-pink);
+  border-radius: var(--radius-pill);
+  color: var(--bili-pink);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.btn--follow:hover {
+  background: var(--pink-soft);
+}
+
+.btn--follow.is-followed {
+  background: var(--card-hover);
+  border-color: var(--border);
+  color: var(--text-2);
+}
+
+/* ===== 弹幕列表 ===== */
+.chat-area {
+  position: relative;
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-height: 0;
+  padding-top: 8px;
+}
+
+.chat-list {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  padding: 4px 10px 10px;
+}
+
+/* ===== 弹幕气泡 ===== */
+.chat-item {
+  position: relative;
+  width: 100%;
+  margin-bottom: 8px;
+  padding: 8px 10px;
+  background: var(--card);
+  border: 1px solid transparent;
+  border-radius: var(--radius-md);
+  color: var(--text-1);
+  font-size: var(--font-size-base);
+  line-height: 1.55;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  cursor: pointer;
+  user-select: none;
+  animation: pop-in 0.18s var(--ease) both;
+  transition: background var(--dur) var(--ease), border-color var(--dur) var(--ease),
+    opacity 0.25s var(--ease);
+}
+
+.chat-item__name {
+  color: var(--bili-blue);
+  font-weight: 600;
+}
+
+.chat-item__text {
+  color: var(--text-1);
+}
+
+/* pending：可操作窗口，右缘粉色呼吸光晕 */
+.chat-item--pending:hover {
+  background: var(--card-hover);
+}
+
+.chat-item--pending::after {
+  content: "";
+  position: absolute;
+  top: 8px;
+  right: 0;
+  bottom: 8px;
+  width: 3px;
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+  background: var(--bili-pink);
+  animation: breathe 1.5s ease-in-out infinite;
+}
+
+/* 点击正确 */
+.chat-item--ok {
+  background: var(--success-soft);
+  border-color: var(--success);
+  pointer-events: none;
+  cursor: default;
+}
+
+/* 点击错误 */
+.chat-item--wrong {
+  background: var(--danger-soft);
+  border-color: var(--danger);
+  pointer-events: none;
+  cursor: default;
+  animation: shake 0.32s var(--ease);
+}
+
+/* 漏办：变红并保留，不消失 */
+.chat-item--miss {
+  background: var(--miss-soft);
+  border-color: var(--miss);
+  pointer-events: none;
+  cursor: default;
+}
+
+.chat-item--miss .chat-item__name {
+  color: var(--miss);
+}
+
+.chat-item--miss .chat-item__text {
+  color: var(--miss);
+}
+
+/* 正常同步：灰化、不可点击 */
+.chat-item--synced {
+  opacity: 0.45;
+  pointer-events: none;
+  cursor: default;
+}
+
+/* 玩家自己发送的弹幕：样式同正常气泡，无判定 */
+.chat-item--self {
+  background: var(--card);
+  border-color: var(--border);
+  cursor: default;
+  pointer-events: none;
+}
+
+.chat-item--self .chat-item__name {
+  color: var(--bili-pink);
+}
+
+/* 点击消除后的淡出移除（约 400ms 后进入此状态） */
+.chat-item.is-removing {
+  animation: fade-out 0.26s ease forwards;
+  pointer-events: none;
+}
+
+/* 状态角标 */
+.chat-badge {
+  position: absolute;
+  top: -6px;
+  right: 8px;
+  display: grid;
+  place-items: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 4px;
+  border-radius: var(--radius-pill);
+  color: var(--text-inverse);
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1;
+  box-shadow: var(--shadow-1);
+}
+
+.chat-badge--ok {
+  background: var(--success);
+}
+
+.chat-badge--wrong {
+  background: var(--danger);
+}
+
+.chat-badge--miss {
+  right: auto;
+  left: 8px;
+  background: var(--miss);
+}
+
+/* 系统消息 */
+.chat-system {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0 0 10px;
+  padding: 2px;
+  color: var(--text-3);
+  font-size: clamp(11px, 0.9vw, 13px);
+  line-height: 1.4;
+  animation: pop-in 0.18s var(--ease) both;
+}
+
+.chat-system::before {
+  content: "";
+  flex: 0 0 auto;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--text-3);
+}
+
+/* 连击浮层（N≥5 才显示） */
+.combo-hint {
+  position: absolute;
+  z-index: 4;
+  top: 4px;
+  left: 50%;
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 12px;
+  border-radius: var(--radius-pill);
+  background: var(--bili-pink);
+  box-shadow: var(--shadow-pink);
+  color: var(--text-inverse);
+  font-size: clamp(11px, 0.9vw, 13px);
+  font-weight: 700;
+  line-height: 1.4;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateX(-50%);
+  transition: opacity var(--dur) var(--ease);
+}
+
+.combo-hint.is-visible {
+  opacity: 1;
+}
+
+.combo-hint.is-pop {
+  animation: pulse 0.32s var(--ease);
+}
+
+/* ===== 输入栏 ===== */
+.chat-input-bar {
+  display: flex;
+  flex: 0 0 auto;
+  gap: 8px;
+  padding: 10px;
+  background: var(--panel);
+  border-top: 1px solid var(--border);
+}
+
+.chat-input {
+  flex: 1 1 auto;
+  min-width: 0;
+  height: 38px;
+  padding: 0 14px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-pill);
+  color: var(--text-1);
+  font-size: var(--font-size-base);
+  outline: none;
+  transition: border-color var(--dur) var(--ease), box-shadow var(--dur) var(--ease);
+}
+
+.chat-input::placeholder {
+  color: var(--text-3);
+}
+
+.chat-input:focus {
+  border-color: var(--bili-pink);
+  box-shadow: 0 0 0 2px var(--pink-soft);
+}
+
+.chat-send {
+  flex: 0 0 auto;
+  height: 38px;
+  padding: 0 20px;
+  font-size: var(--font-size-base);
+}
+
+/* ===== 移动端：隐藏主播卡，输入栏吸底 ===== */
+@media (max-width: 1023px) {
+  .anchor-card {
+    display: none;
+  }
+
+  .chat-area {
+    padding-top: 0;
+  }
+
+  .chat-list {
+    padding: 8px 10px 6px;
+  }
+
+  .chat-input-bar {
+    padding: 8px 10px calc(8px + env(safe-area-inset-bottom, 0px));
+  }
+
+  .chat-input,
+  .chat-send {
+    height: 36px;
+  }
+
+  .chat-send {
+    padding: 0 18px;
+  }
+}

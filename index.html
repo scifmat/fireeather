@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="description" content="守护火羽·千舰之夜：B站直播间房管模拟游戏。在 2 秒内点掉黑粉弹幕，别让它们上到主播的弹幕机。">
+  <title>火羽ひのめ直播间房管模拟</title>
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="./public/css/main.css">
+  <link rel="stylesheet" href="./public/css/layout.css">
+  <link rel="stylesheet" href="./public/css/live.css">
+  <link rel="stylesheet" href="./public/css/panel.css">
+  <link rel="stylesheet" href="./public/css/modal.css">
+</head>
+<body>
+  <div class="app">
+    <!-- ===== 左栏：直播屏 + 礼物区 ===== -->
+    <section class="stage-column" aria-label="直播画面">
+      <div class="live-area" id="liveArea">
+        <div class="live-stage" id="liveStage">
+          <div class="live-screen">
+            <!-- GIF 未就绪时的占位；加载期间不阻塞教程与对局 -->
+            <div class="live-placeholder" id="livePlaceholder">
+              <span class="live-placeholder__dot" aria-hidden="true"></span>
+              <p class="live-placeholder__text">直播画面加载中…</p>
+            </div>
+
+            <img
+              class="live-screen__img"
+              id="liveScreenImg"
+              src="./public/images/home_screen.gif"
+              alt="火羽ひのめ生日会直播画面"
+              decoding="async"
+              draggable="false">
+
+            <!-- 统计条：绝对定位于直播屏左上角 -->
+            <div class="stats-bar" id="statsBar" aria-label="对局统计">
+              <span class="stat-pill stat-pill--total">
+                <span class="stat-pill__label">弹幕数</span>
+                <span class="stat-pill__value" id="statTotal">0/100</span>
+              </span>
+              <span class="stat-pill stat-pill--done">
+                <span class="stat-pill__label">已办</span>
+                <span class="stat-pill__value" id="statDone">0</span>
+              </span>
+              <span class="stat-pill stat-pill--miss">
+                <span class="stat-pill__label">漏办</span>
+                <span class="stat-pill__value" id="statMiss">0</span>
+              </span>
+              <span class="stat-pill stat-pill--wrong">
+                <span class="stat-pill__label">误伤</span>
+                <span class="stat-pill__value" id="statWrong">0</span>
+              </span>
+              <span class="stat-pill stat-pill--favor" id="statFavorPill">
+                <span class="stat-pill__label">好感度</span>
+                <span class="stat-pill__value" id="statFavor">50</span>
+                <span class="favor-meter" aria-hidden="true">
+                  <span class="favor-meter__fill" id="favorFill"></span>
+                </span>
+              </span>
+            </div>
+
+            <!-- 弹幕机：百分比对位 GIF 内的 comment 白卡 -->
+            <div class="danmaku-machine" id="danmakuMachine" aria-label="主播弹幕机">
+              <div class="machine__title" aria-hidden="true">comment</div>
+              <div class="machine__viewport" id="machineViewport">
+                <div class="machine__track" id="machineTrack"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="gift-area scroll-y" id="giftArea" aria-label="礼物栏">
+        <div class="gift-list" id="giftList"></div>
+      </div>
+    </section>
+
+    <!-- ===== 右栏：主播卡 + 弹幕列表 + 输入栏 ===== -->
+    <aside class="side-panel" aria-label="弹幕面板">
+      <header class="anchor-card">
+        <img class="anchor-card__avatar" src="./public/images/anchor.png" alt="火羽ひのめ头像">
+        <div class="anchor-card__meta">
+          <div class="anchor-card__name">火羽ひのめ</div>
+          <div class="anchor-card__uid">UID：2094031249</div>
+        </div>
+        <button type="button" class="btn btn--follow" id="followBtn" aria-pressed="false">关注</button>
+      </header>
+
+      <section class="chat-area" aria-label="弹幕列表">
+        <div class="combo-hint" id="comboHint" aria-live="polite"></div>
+        <div class="chat-list scroll-y" id="chatList"></div>
+      </section>
+
+      <form class="chat-input-bar" id="chatForm" autocomplete="off">
+        <input
+          class="chat-input"
+          id="chatInput"
+          type="text"
+          placeholder="发个弹幕呗~"
+          maxlength="40"
+          aria-label="发送弹幕">
+        <button class="btn btn--primary chat-send" id="sendBtn" type="submit">发送</button>
+      </form>
+    </aside>
+  </div>
+
+  <!-- ===== 教程弹窗（仅首次显示，同时兼作 GIF 加载遮罩） ===== -->
+  <div class="modal-mask" id="tutorialModal" hidden>
+    <div class="modal tutorial scroll-y" role="dialog" aria-modal="true" aria-labelledby="tutorialTitle">
+      <div class="tutorial__kicker">HINOME BIRTHDAY · 2022.10.12</div>
+      <h1 class="tutorial__title" id="tutorialTitle">火羽ひのめ 生日会·房管执勤手册</h1>
+      <p class="tutorial__intro">现在是 2022 年 10 月 12 日，火羽ひのめ出道第二年的生日会直播间。你是她今晚的房管。</p>
+      <ol class="rule-list">
+        <li class="rule-item">右侧面板每条弹幕出现后 2 秒内可点击。</li>
+        <li class="rule-item">黑粉弹幕点了加好感度。</li>
+        <li class="rule-item">漏掉会上到主播弹幕机，并扣好感度。</li>
+        <li class="rule-item">误伤正常观众也扣好感度。</li>
+      </ol>
+      <p class="tutorial__goal">好感度归零即失职，撑过 100 条弹幕即守护成功。</p>
+      <div class="tutorial__actions">
+        <button type="button" class="btn btn--primary" id="startBtn">开始执勤</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== 结算弹窗 ===== -->
+  <div class="modal-mask" id="resultModal" hidden>
+    <div class="modal result scroll-y" role="dialog" aria-modal="true" aria-labelledby="resultTitle">
+      <div class="result__grade" id="resultGrade">S</div>
+      <div class="result__title" id="resultTitle">金牌房管</div>
+      <p class="result__subtitle" id="resultSubtitle"></p>
+      <div class="result__stats" aria-label="对局统计">
+        <div class="result-stat">
+          <span class="result-stat__label">弹幕数</span>
+          <span class="result-stat__value" id="resTotal">0</span>
+        </div>
+        <div class="result-stat result-stat--done">
+          <span class="result-stat__label">已办</span>
+          <span class="result-stat__value" id="resDone">0</span>
+        </div>
+        <div class="result-stat result-stat--miss">
+          <span class="result-stat__label">漏办</span>
+          <span class="result-stat__value" id="resMiss">0</span>
+        </div>
+        <div class="result-stat result-stat--wrong">
+          <span class="result-stat__label">误伤</span>
+          <span class="result-stat__value" id="resWrong">0</span>
+        </div>
+        <div class="result-stat result-stat--favor">
+          <span class="result-stat__label">好感度</span>
+          <span class="result-stat__value" id="resFavor">0</span>
+        </div>
+      </div>
+      <p class="result__egg" id="resultEgg" hidden></p>
+      <div class="result__actions">
+        <button type="button" class="btn btn--primary" id="restartBtn">再来一次</button>
+      </div>
+    </div>
+  </div>
+
+  <noscript>需要启用 JavaScript 才能开始执勤。</noscript>
+
+  <!-- 数据脚本先引入，逻辑脚本后引入；全部为普通 defer，兼容 file:// -->
+  <script defer src="./public/data/config.js"></script>
+  <script defer src="./public/data/comments.js"></script>
+  <script defer src="./public/data/danmaku-positive.js"></script>
+  <script defer src="./public/data/danmaku-negative.js"></script>
+  <script defer src="./public/data/audience.js"></script>
+  <script defer src="./public/js/audio.js"></script>
+  <script defer src="./public/js/favor.js"></script>
+  <script defer src="./public/js/ui-live.js"></script>
+  <script defer src="./public/js/ui-panel.js"></script>
+  <script defer src="./public/js/game.js"></script>
+  <script defer src="./public/js/main.js"></script>
+</body>
+</html>
