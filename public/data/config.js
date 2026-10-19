@@ -32,6 +32,12 @@ window.GAME_CONFIG = {
     bgmVolume: 0.35,
     sfxVolume: 0.8
   },
+  skins: [
+    { id: "1", label: "皮套一", src: "./public/images/home_screen_1.gif", backdrop: "./public/images/home_screen_1_bg.webp" },
+    { id: "2", label: "皮套二", src: "./public/images/home_screen_2.gif", backdrop: "./public/images/home_screen_2_bg.webp" },
+    { id: "3", label: "皮套三", src: "./public/images/home_screen_3.gif", backdrop: "./public/images/home_screen_3_bg.webp" }
+  ],
+  defaultSkin: "2",
   storageKey: "hinome_mod_seen_v1",
   rating: [
     { min: 95, grade: "SSS", title: "奇迹之夜" },

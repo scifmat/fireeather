@@ -1,8 +1,10 @@
 /**
  * live.css —— 左栏直播区域
- * 职责：直播屏与 GIF 占位、统计条、弹幕机、礼物区。
- * 弹幕机采用百分比定位：容器锁定 16:9，GIF 以 cover 铺满，构图恒定，
- * 因此 right/top/width/height 可在全分辨率下稳定对齐 GIF 内的 comment 卡片。
+ * 职责：直播屏与柔化补边、三皮套下拉、统计条、弹幕机、礼物区。
+ * 直播屏：PC 端填满左栏（与礼物模块等宽），主画面按原比例居中、两侧/上下以
+ *         同套皮肤的柔化底图补齐；移动端保持 16:9。
+ * 弹幕机：独立悬浮卡片，右侧 2.5%、顶部 8%、宽度 35%；PC 高 76%，移动端高 73%，
+ *         底部留出皮肤下拉的呼吸空间，不再依赖旧 GIF 内的 comment 白卡。
  */
 
 /* ===== 直播屏 ===== */
@@ -18,14 +20,35 @@
   overflow: hidden;
 }
 
+/* PC 沉浸模式：主画面按原比例居中，两侧/上下由同套皮肤的柔化底图补齐 */
+.live-screen__backdrop {
+  position: absolute;
+  z-index: 0;
+  inset: -8%;
+  display: none;
+  background-color: var(--panel);
+  background-position: center;
+  background-size: cover;
+  filter: blur(18px) saturate(1.05);
+  opacity: 0.92;
+}
+
+.live-stage.is-immersive .live-screen__backdrop {
+  display: block;
+}
+
 .live-screen__img {
   position: relative;
-  z-index: 1;
+  z-index: 2;
   width: 100%;
   height: 100%;
   object-fit: cover;
   opacity: 0;
   transition: opacity 0.45s var(--ease);
+}
+
+.live-stage.is-immersive .live-screen__img {
+  object-fit: contain;
 }
 
 .live-screen__img.is-ready {
@@ -34,7 +57,7 @@
 
 .live-placeholder {
   position: absolute;
-  z-index: 0;
+  z-index: 1;
   inset: 0;
   display: flex;
   flex-direction: column;
@@ -189,17 +212,17 @@
 .danmaku-machine {
   position: absolute;
   z-index: 5;
-  top: 7.8%;
-  right: 0.1%;
+  top: 8%;
+  right: 2.5%;
   display: flex;
   flex-direction: column;
-  width: 37.3%;
-  height: 84.5%;
+  width: 35%;
+  height: 76%;
   padding: 1.5% 2% 2.1%;
   overflow: hidden;
   background: var(--machine-bg);
   border-radius: clamp(12px, 2.6vw, 40px);
-  box-shadow: var(--shadow-1);
+  box-shadow: var(--shadow-2);
   -webkit-backdrop-filter: blur(2px);
   backdrop-filter: blur(2px);
 }
@@ -260,6 +283,90 @@
 
 .machine-item--miss .machine-item__name {
   color: var(--miss);
+}
+
+/* ===== 皮肤切换 ===== */
+.skin-switcher {
+  position: absolute;
+  z-index: 7;
+  right: 2.5%;
+  bottom: 2.5%;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-pill);
+  box-shadow: var(--shadow-1);
+  color: var(--text-2);
+  font-size: var(--font-size-stats);
+  user-select: none;
+  transition: border-color var(--dur) var(--ease), opacity var(--dur) var(--ease);
+}
+
+.skin-switcher:hover {
+  border-color: var(--bili-pink);
+}
+
+.skin-switcher.is-loading {
+  opacity: 0.55;
+  pointer-events: none;
+}
+
+.skin-switcher__label {
+  color: var(--text-2);
+  font-size: 0.92em;
+  line-height: 1;
+}
+
+.skin-switcher__control {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+.skin-switcher__control::after {
+  content: "▾";
+  position: absolute;
+  right: 2px;
+  color: var(--bili-pink);
+  font-size: 10px;
+  line-height: 1;
+  pointer-events: none;
+}
+
+.skin-switcher__select {
+  padding: 0 14px 0 2px;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background-color: var(--panel);
+  color: var(--text-1);
+  font-size: inherit;
+  font-weight: 700;
+  line-height: 1.5;
+  cursor: pointer;
+  outline: none;
+  -webkit-appearance: none;
+  appearance: none;
+  color-scheme: dark;
+}
+
+/* 原生下拉列表：显式指定深色底与文字，避免出现系统白底 */
+.skin-switcher__select option {
+  background-color: var(--panel);
+  color: var(--text-1);
+}
+
+.skin-switcher__select option:checked {
+  background-color: var(--card-hover);
+  color: var(--bili-pink);
+}
+
+.skin-switcher__select:focus-visible {
+  outline: 2px solid var(--bili-blue);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
 }
 
 /* ===== 礼物区 ===== */
@@ -352,10 +459,7 @@
   }
 
   .danmaku-machine {
-    top: 7.8%;
-    right: 1%;
-    width: 37%;
-    height: 84.5%;
+    height: 73%;
     padding: 1.6% 2% 2.2%;
     border-radius: clamp(8px, 2.5vw, 18px);
   }
