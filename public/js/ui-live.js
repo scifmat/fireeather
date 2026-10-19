@@ -1,11 +1,17 @@
 /**
  * ui-live.js —— 左栏渲染
- * 职责：直播屏 16:9 自适应、GIF 占位切换、统计条、好感度飘字、弹幕机、礼物区。
+ * 职责：直播屏自适应（PC 全宽 + 主画面居中/柔化补边，移动端 16:9）、
+ *       三套皮套切换、统计条、好感度飘字、弹幕机、礼物区。
  */
 (function (HMG) {
   'use strict';
 
   var CONFIG = window.GAME_CONFIG;
+  var SKINS = CONFIG.skins || [];
+  var DEFAULT_SKIN_ID = CONFIG.defaultSkin || '2';
+  var activeSkinId = DEFAULT_SKIN_ID;
+  var skinLoadToken = 0;
+  var skinCache = {};
 
   /* 礼物栏展示数据：图标编号对应 public/images/gift_icon/01~11.png */
   var GIFTS = [
@@ -38,6 +44,9 @@
     dom.liveStage = document.getElementById('liveStage');
     dom.livePlaceholder = document.getElementById('livePlaceholder');
     dom.liveImg = document.getElementById('liveScreenImg');
+    dom.liveBackdrop = document.getElementById('liveScreenBackdrop');
+    dom.skinSwitcher = document.getElementById('skinSwitcher');
+    dom.skinSelect = document.getElementById('skinSelect');
     dom.statTotal = document.getElementById('statTotal');
     dom.statDone = document.getElementById('statDone');
     dom.statMiss = document.getElementById('statMiss');
@@ -88,7 +97,9 @@
   }
 
   /**
-   * 计算并设置直播屏尺寸：宽度优先撑满；高度受限时按高度反推宽度并居中。
+   * 计算并设置直播屏尺寸：
+   * PC 端填满左栏（与礼物模块等宽），主画面按原比例居中，背景由柔化底图补齐；
+   * 移动端保持 16:9，并按左右 8px 的外边距计算宽度。
    * @returns {void}
    */
   function fitStage() {
@@ -98,12 +109,17 @@
       return;
     }
 
-    var targetWidth = width;
     var isDesktop = window.innerWidth >= 1024;
-    if (isDesktop && height > 0) {
-      targetWidth = Math.min(width, (height * 16) / 9);
+    var targetWidth = width;
+    var targetHeight;
+
+    if (isDesktop) {
+      dom.liveStage.classList.add('is-immersive');
+      targetHeight = height > 0 ? height : (width * 9) / 16;
+    } else {
+      dom.liveStage.classList.remove('is-immersive');
+      targetHeight = (width * 9) / 16;
     }
-    var targetHeight = (targetWidth * 9) / 16;
 
     if (Math.abs(targetWidth - lastStageWidth) < 0.5 && Math.abs(targetHeight - lastStageHeight) < 0.5) {
       return;
@@ -142,6 +158,13 @@
    * @returns {void}
    */
   function handleImageLoad() {
+    var currentSrc = dom.liveImg.getAttribute('src');
+    for (var i = 0; i < SKINS.length; i += 1) {
+      if (SKINS[i].src === currentSrc) {
+        skinCache[SKINS[i].id] = true;
+        break;
+      }
+    }
     dom.liveImg.classList.add('is-ready');
     dom.livePlaceholder.classList.add('is-fading');
     window.clearTimeout(placeholderTimer);
@@ -175,6 +198,143 @@
         handleImageError();
       }
     }
+  }
+
+  /**
+   * 按 id 查找皮肤配置。
+   * @param {string} id 皮肤 id
+   * @returns {object|null} 皮肤配置，未找到为 null
+   */
+  function getSkinById(id) {
+    for (var i = 0; i < SKINS.length; i += 1) {
+      if (SKINS[i].id === id) {
+        return SKINS[i];
+      }
+    }
+    return null;
+  }
+
+  /**
+   * 设置皮肤切换器的加载状态。
+   * @param {boolean} loading 是否正在切换
+   * @returns {void}
+   */
+  function setSkinLoading(loading) {
+    if (!dom.skinSwitcher) {
+      return;
+    }
+    dom.skinSwitcher.classList.toggle('is-loading', !!loading);
+    if (loading) {
+      dom.skinSwitcher.setAttribute('aria-busy', 'true');
+    } else {
+      dom.skinSwitcher.removeAttribute('aria-busy');
+    }
+  }
+
+  /**
+   * 替换 PC 两侧/上下的柔化底图。
+   * @param {{backdrop:string}} skin 皮肤配置
+   * @returns {void}
+   */
+  function applySkinBackdrop(skin) {
+    if (!dom.liveBackdrop || !skin || !skin.backdrop) {
+      return;
+    }
+    dom.liveBackdrop.style.backgroundImage = 'url("' + skin.backdrop + '")';
+  }
+
+  /**
+   * 应用皮肤：更新直播画面、柔化底图、下拉框与无障碍文案。
+   * @param {{id:string, label:string, src:string, backdrop:string}} skin 皮肤配置
+   * @returns {void}
+   */
+  function applySkin(skin) {
+    activeSkinId = skin.id;
+    skinCache[skin.id] = true;
+    dom.liveImg.src = skin.src;
+    dom.liveImg.alt = '火羽ひのめ生日会直播画面（' + skin.label + '）';
+    dom.skinSelect.value = skin.id;
+    applySkinBackdrop(skin);
+    setSkinLoading(false);
+  }
+
+  /**
+   * 预加载目标皮肤 GIF；成功后才替换可见画面，避免切换时出现白屏。
+   * @param {{id:string, src:string}} skin 皮肤配置
+   * @param {Function} callback 加载结果回调，参数为是否成功
+   * @returns {void}
+   */
+  function loadSkin(skin, callback) {
+    if (skinCache[skin.id]) {
+      callback(true);
+      return;
+    }
+    var probe = new Image();
+    /* 预加载成功：记录缓存并通知调用方替换画面。 */
+    probe.onload = function () {
+      skinCache[skin.id] = true;
+      callback(true);
+    };
+    /* 预加载失败：保持当前皮肤不变。 */
+    probe.onerror = function () {
+      callback(false);
+    };
+    probe.src = skin.src;
+  }
+
+  /**
+   * 处理皮肤下拉切换。
+   * @returns {void}
+   */
+  function handleSkinChange() {
+    if (!dom.skinSelect) {
+      return;
+    }
+    var requested = getSkinById(dom.skinSelect.value);
+    if (!requested) {
+      dom.skinSelect.value = activeSkinId;
+      return;
+    }
+    if (requested.id === activeSkinId) {
+      dom.skinSelect.value = activeSkinId;
+      return;
+    }
+
+    var token = ++skinLoadToken;
+    setSkinLoading(true);
+    loadSkin(requested, function (loaded) {
+      if (token !== skinLoadToken) {
+        return;
+      }
+      if (!loaded) {
+        setSkinLoading(false);
+        dom.skinSelect.value = activeSkinId;
+        return;
+      }
+      applySkin(requested);
+    });
+  }
+
+  /**
+   * 初始化皮肤切换器：读取默认皮套、同步柔化底图并绑定 change 事件。
+   * @returns {void}
+   */
+  function initSkinSwitcher() {
+    if (!dom.skinSelect || !dom.skinSwitcher) {
+      return;
+    }
+    var defaultSkin = getSkinById(DEFAULT_SKIN_ID) || SKINS[0];
+    if (!defaultSkin) {
+      return;
+    }
+    activeSkinId = defaultSkin.id;
+    dom.skinSelect.value = defaultSkin.id;
+    dom.liveImg.alt = '火羽ひのめ生日会直播画面（' + defaultSkin.label + '）';
+    applySkinBackdrop(defaultSkin);
+    if (dom.liveImg.getAttribute('src') !== defaultSkin.src) {
+      dom.liveImg.src = defaultSkin.src;
+    }
+    dom.skinSelect.addEventListener('change', handleSkinChange);
   }
 
   /**
@@ -321,6 +481,7 @@
     cacheDom();
     buildGiftList();
     initLiveImage();
+    initSkinSwitcher();
     initStageFit();
   }
 

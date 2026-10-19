@@ -25,11 +25,14 @@
               <p class="live-placeholder__text">直播画面加载中…</p>
             </div>
 
+            <!-- PC 两侧柔化补边，避免宽屏黑边；皮肤切换时同步替换 -->
+            <div class="live-screen__backdrop" id="liveScreenBackdrop" aria-hidden="true"></div>
+
             <img
               class="live-screen__img"
               id="liveScreenImg"
-              src="./public/images/home_screen.gif"
-              alt="火羽ひのめ生日会直播画面"
+              src="./public/images/home_screen_2.gif"
+              alt="火羽ひのめ生日会直播画面（皮套二）"
               decoding="async"
               draggable="false">
 
@@ -60,12 +63,24 @@
               </span>
             </div>
 
-            <!-- 弹幕机：百分比对位 GIF 内的 comment 白卡 -->
+            <!-- 弹幕机：悬浮在直播画面右侧，四边保留呼吸留白 -->
             <div class="danmaku-machine" id="danmakuMachine" aria-label="主播弹幕机">
               <div class="machine__title" aria-hidden="true">comment</div>
               <div class="machine__viewport" id="machineViewport">
                 <div class="machine__track" id="machineTrack"></div>
               </div>
+            </div>
+
+            <!-- 皮肤切换：默认皮套二，选项对应三套直播画面 GIF -->
+            <div class="skin-switcher" id="skinSwitcher">
+              <label class="skin-switcher__label" for="skinSelect">画面</label>
+              <span class="skin-switcher__control">
+                <select class="skin-switcher__select" id="skinSelect" aria-label="切换直播画面皮套">
+                  <option value="1">皮套一</option>
+                  <option value="2" selected>皮套二</option>
+                  <option value="3">皮套三</option>
+                </select>
+              </span>
             </div>
           </div>
         </div>
