@@ -7,6 +7,7 @@
   'use strict';
 
   var CONFIG = window.GAME_CONFIG.favor;
+  var ROACH_CONFIG = window.GAME_CONFIG.roach;
 
   /**
    * 把数值限制在闭区间内。
@@ -68,6 +69,33 @@
   }
 
   /**
+   * 应用一次“拍死蟑螂”：好感度 +1（默认，可由 config 调整），不影响连击。
+   * @param {{value:number, combo:number, maxCombo:number}} state 好感度状态
+   * @returns {{delta:number}} 本次好感度变化
+   */
+  function applyRoachKill(state) {
+    var gain = (ROACH_CONFIG && ROACH_CONFIG.killGain) || 1;
+    state.value = clamp(state.value + gain, CONFIG.min, CONFIG.max);
+    return { delta: gain };
+  }
+
+  /**
+   * 在一轮蟑螂入侵结束时结算逃跑惩罚：每跑掉一只扣 0.5（默认），连击不受影响。
+   * @param {{value:number, combo:number, maxCombo:number}} state 好感度状态
+   * @param {number} escapedCount 本轮跑掉的蟑螂数量
+   * @returns {{delta:number, escaped:number}} 总扣分（负数）与实际逃跑数量
+   */
+  function applyRoachEscapes(state, escapedCount) {
+    var count = Math.max(0, escapedCount || 0);
+    if (count === 0) {
+      return { delta: 0, escaped: 0 };
+    }
+    var penalty = ((ROACH_CONFIG && ROACH_CONFIG.escapePenalty) || 0.5) * count;
+    state.value = clamp(state.value - penalty, CONFIG.min, CONFIG.max);
+    return { delta: -penalty, escaped: count };
+  }
+
+  /**
    * 判断好感度是否已归零/跌破零（立即失败）。
    * @param {{value:number}} state 好感度状态
    * @returns {boolean} 是否失败
@@ -112,6 +140,8 @@
     applyCorrect: applyCorrect,
     applyMiss: applyMiss,
     applyWrong: applyWrong,
+    applyRoachKill: applyRoachKill,
+    applyRoachEscapes: applyRoachEscapes,
     isFailed: isFailed,
     getRatio: getRatio,
     getRating: getRating

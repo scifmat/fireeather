@@ -302,6 +302,7 @@
 
     var token = ++skinLoadToken;
     setSkinLoading(true);
+    /* 皮肤预加载完成后的回调：仅接受最后一次切换请求。 */
     loadSkin(requested, function (loaded) {
       if (token !== skinLoadToken) {
         return;

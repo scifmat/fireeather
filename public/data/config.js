@@ -38,6 +38,42 @@ window.GAME_CONFIG = {
     { id: "3", label: "皮套三", src: "./public/images/home_screen_3.gif", backdrop: "./public/images/home_screen_3_bg.webp" }
   ],
   defaultSkin: "2",
+  roach: {
+    roundCount: 3,
+    triggerRanges: [
+      { from: 15, to: 22 },
+      { from: 42, to: 50 },
+      { from: 70, to: 78 }
+    ],
+    bossSpawnDelayMs: 350,
+    gruntSpawnDelaysMs: [1150, 1950, 2750, 3550],
+    /* 头领与小强同速，配合出生间隔保持队形；最后一只约 9.55s 离场 */
+    bossDurationMs: 6000,
+    gruntDurationMs: 6000,
+    /* 队列最小间距 = 入侵区宽度 × 该比例（不小于 10px） */
+    minGapRatio: 0.02,
+    killGain: 1,
+    escapePenalty: 0.5,
+    dieLingerMs: 420,
+    zoneFadeMs: 320,
+    sprites: {
+      bossWalk: "./public/images/roach/cockroach_boss_walk.gif",
+      bossDie: "./public/images/roach/cockroach_boss_die.png",
+      gruntWalk: "./public/images/roach/roach_grunt_walk.gif",
+      gruntDie: "./public/images/roach/roach_grunt_die.png",
+      slipperHover: "./public/images/roach/slippers_hover.gif",
+      slipperPress: "./public/images/roach/Slippers_press.png"
+    },
+    audio: {
+      whistle: "./public/audio/roach/whistle.wav",
+      drumbeat: "./public/audio/roach/drumbeat.wav",
+      footsteps: "./public/audio/roach/cockroach_footsteps.wav",
+      snap: "./public/audio/roach/snap.wav",
+      whistleVolume: 0.8,
+      loopVolume: 0.35,
+      snapVolume: 0.75
+    }
+  },
   storageKey: "hinome_mod_seen_v1",
   rating: [
     { min: 95, grade: "SSS", title: "奇迹之夜" },
