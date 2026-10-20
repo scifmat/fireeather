@@ -10,7 +10,12 @@
   var bgm = null;
   var correctSfx = null;
   var wrongSfx = null;
+  var whistleSfx = null;
+  var snapSfx = null;
+  var drumbeatAudio = null;
+  var footstepsAudio = null;
   var bgmDesired = false;
+  var roachLoopDesired = false;
   var initialized = false;
 
   /**
@@ -88,6 +93,104 @@
   }
 
   /**
+   * 播放蟑螂头领入场口哨（每轮一次）。
+   * @returns {void}
+   */
+  function playWhistle() {
+    playSfx(whistleSfx);
+  }
+
+  /**
+   * 播放拖鞋击打音效（拍蟑螂阶段每次左键）。
+   * @returns {void}
+   */
+  function playSnap() {
+    playSfx(snapSfx);
+  }
+
+  /**
+   * 从头播放一个循环音频（鼓点/脚步），失败时静默。
+   * @param {HTMLAudioElement|null} audio 目标循环音频
+   * @param {boolean} restart 是否从头开始
+   * @returns {void}
+   */
+  function playLoop(audio, restart) {
+    if (!audio) {
+      return;
+    }
+    if (restart) {
+      try {
+        audio.currentTime = 0;
+      } catch (error) {
+        /* 音频未就绪时忽略 currentTime 设置失败。 */
+      }
+    }
+    var promise = audio.play();
+    if (promise && typeof promise.catch === 'function') {
+      promise.catch(ignoreRejection);
+    }
+  }
+
+  /**
+   * 开始蟑螂入侵的鼓点 + 脚步循环。
+   * @returns {void}
+   */
+  function startRoachLoop() {
+    roachLoopDesired = true;
+    playLoop(drumbeatAudio, true);
+    playLoop(footstepsAudio, true);
+  }
+
+  /**
+   * 暂停蟑螂循环（保留播放意愿，页面恢复后继续）。
+   * @returns {void}
+   */
+  function pauseRoachLoop() {
+    if (drumbeatAudio && !drumbeatAudio.paused) {
+      drumbeatAudio.pause();
+    }
+    if (footstepsAudio && !footstepsAudio.paused) {
+      footstepsAudio.pause();
+    }
+  }
+
+  /**
+   * 恢复蟑螂循环：仅当本轮仍在入侵中且此前有播放意愿时执行。
+   * @returns {void}
+   */
+  function resumeRoachLoop() {
+    if (!roachLoopDesired) {
+      return;
+    }
+    playLoop(drumbeatAudio, false);
+    playLoop(footstepsAudio, false);
+  }
+
+  /**
+   * 停止蟑螂循环并归零（入侵结束/重开/结算时调用）。
+   * @returns {void}
+   */
+  function stopRoachLoop() {
+    roachLoopDesired = false;
+    if (drumbeatAudio) {
+      drumbeatAudio.pause();
+      try {
+        drumbeatAudio.currentTime = 0;
+      } catch (error) {
+        /* 音频未就绪时忽略。 */
+      }
+    }
+    if (footstepsAudio) {
+      footstepsAudio.pause();
+      try {
+        footstepsAudio.currentTime = 0;
+      } catch (error) {
+        /* 音频未就绪时忽略。 */
+      }
+    }
+  }
+
+  /**
    * 从头播放一个短音效，失败时静默（不打断游戏）。
    * @param {HTMLAudioElement|null} audio 目标音效对象
    * @returns {void}
@@ -113,6 +216,7 @@
    */
   function handleFirstInteraction() {
     playBgm();
+    resumeRoachLoop();
   }
 
   /**
@@ -128,6 +232,12 @@
     correctSfx = createAudio('./public/audio/correct.wav', false, CONFIG.audio.sfxVolume);
     wrongSfx = createAudio('./public/audio/wrong.wav', false, CONFIG.audio.sfxVolume);
 
+    var roachAudio = CONFIG.roach.audio;
+    whistleSfx = createAudio(roachAudio.whistle, false, roachAudio.whistleVolume);
+    snapSfx = createAudio(roachAudio.snap, false, roachAudio.snapVolume);
+    drumbeatAudio = createAudio(roachAudio.drumbeat, true, roachAudio.loopVolume);
+    footstepsAudio = createAudio(roachAudio.footsteps, true, roachAudio.loopVolume);
+
     playBgm();
     document.addEventListener('pointerdown', handleFirstInteraction, { once: true });
     document.addEventListener('keydown', handleFirstInteraction, { once: true });
@@ -139,6 +249,12 @@
     pauseBgm: pauseBgm,
     resumeBgm: resumeBgm,
     playCorrect: playCorrect,
-    playWrong: playWrong
+    playWrong: playWrong,
+    playWhistle: playWhistle,
+    playSnap: playSnap,
+    startRoachLoop: startRoachLoop,
+    pauseRoachLoop: pauseRoachLoop,
+    resumeRoachLoop: resumeRoachLoop,
+    stopRoachLoop: stopRoachLoop
   };
 })(window.HMG = window.HMG || {});

@@ -36,6 +36,9 @@
               decoding="async"
               draggable="false">
 
+            <!-- 拍蟑螂：底部半透明红框区域，蟑螂从左侧进入、右侧离开 -->
+            <div class="roach-zone" id="roachZone" aria-hidden="true"></div>
+
             <!-- 统计条：绝对定位于直播屏左上角 -->
             <div class="stats-bar" id="statsBar" aria-label="对局统计">
               <span class="stat-pill stat-pill--total">
@@ -120,6 +123,12 @@
     </aside>
   </div>
 
+  <!-- 拍蟑螂阶段的拖鞋光标（跟随鼠标；右侧面板自动隐藏） -->
+  <div class="roach-cursor" id="roachCursor" aria-hidden="true">
+    <img class="roach-cursor__img roach-cursor__img--hover" src="./public/images/roach/slippers_hover.gif" alt="">
+    <img class="roach-cursor__img roach-cursor__img--press" src="./public/images/roach/Slippers_press.png" alt="">
+  </div>
+
   <!-- ===== 教程弹窗（仅首次显示，同时兼作 GIF 加载遮罩） ===== -->
   <div class="modal-mask" id="tutorialModal" hidden>
     <div class="modal tutorial scroll-y" role="dialog" aria-modal="true" aria-labelledby="tutorialTitle">
@@ -131,6 +140,7 @@
         <li class="rule-item">黑粉弹幕点了加好感度。</li>
         <li class="rule-item">漏掉会上到主播弹幕机，并扣好感度。</li>
         <li class="rule-item">误伤正常观众也扣好感度。</li>
+        <li class="rule-item">直播画面底部会不定期钻进蟑螂：拍掉 +1，跑掉扣 0.5。</li>
       </ol>
       <p class="tutorial__goal">好感度归零即失职，撑过 100 条弹幕即守护成功。</p>
       <div class="tutorial__actions">
@@ -186,6 +196,7 @@
   <script defer src="./public/js/favor.js"></script>
   <script defer src="./public/js/ui-live.js"></script>
   <script defer src="./public/js/ui-panel.js"></script>
+  <script defer src="./public/js/roach.js"></script>
   <script defer src="./public/js/game.js"></script>
   <script defer src="./public/js/main.js"></script>
 </body>

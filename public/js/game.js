@@ -29,6 +29,16 @@
   }
 
   /**
+   * 生成 [min, max] 闭区间内的随机整数。
+   * @param {number} min 最小值
+   * @param {number} max 最大值
+   * @returns {number} 随机整数
+   */
+  function randomInt(min, max) {
+    return Math.floor(randomBetween(min, max + 1));
+  }
+
+  /**
    * 返回数组的洗牌副本（Fisher–Yates），不修改原数组。
    * @param {Array} list 原数组
    * @returns {Array} 洗牌后的新数组
@@ -245,6 +255,106 @@
   }
 
   /**
+   * 生成本局三轮蟑螂入侵的触发弹幕数（在 config 的区间内随机，互不重叠）。
+   * @returns {number[]} 三轮触发的弹幕总数
+   */
+  function buildRoachTargets() {
+    var roachConfig = CONFIG.roach;
+    if (!roachConfig || !Array.isArray(roachConfig.triggerRanges)) {
+      return [];
+    }
+    var count = roachConfig.roundCount || roachConfig.triggerRanges.length;
+    /* 为每一轮在配置区间内独立取一个触发弹幕数。 */
+    return roachConfig.triggerRanges.slice(0, count).map(function (range) {
+      return randomInt(range.from, range.to);
+    });
+  }
+
+  /**
+   * 在合适的进度检查并启动下一轮蟑螂入侵；同一时间只允许一轮。
+   * @returns {void}
+   */
+  function maybeStartRoachRound() {
+    if (!state || !state.playing || state.paused) {
+      return;
+    }
+    if (state.processed >= state.timeline.length) {
+      return;
+    }
+    if (HMG.roach.isActive()) {
+      return;
+    }
+    if (!state.roachTargets || state.roachRound >= state.roachTargets.length) {
+      return;
+    }
+    if (state.stats.total < state.roachTargets[state.roachRound]) {
+      return;
+    }
+    state.roachRound += 1;
+    var started = HMG.roach.startRound(state.roachRound);
+    if (!started) {
+      state.roachRound -= 1;
+    }
+  }
+
+  /**
+   * 拍死蟑螂的即时结算：好感度 +1，刷新统计并弹出飘字。
+   * @returns {void}
+   */
+  function handleRoachKill() {
+    if (!state || !state.playing) {
+      return;
+    }
+    var result = HMG.favor.applyRoachKill(state.favor);
+    HMG.uiLive.updateStats(getStatsView());
+    HMG.uiLive.showDelta(result.delta);
+  }
+
+  /**
+   * 单轮蟑螂入侵结束：统一结算逃跑惩罚，并检查失败/通关/下一轮。
+   * @param {number} escapedCount 本轮逃跑的蟑螂数量
+   * @returns {void}
+   */
+  function handleRoachRoundEnd(escapedCount) {
+    if (!state || !state.playing) {
+      return;
+    }
+    if (escapedCount > 0) {
+      var result = HMG.favor.applyRoachEscapes(state.favor, escapedCount);
+      HMG.uiLive.showDelta(result.delta);
+    }
+    HMG.uiLive.updateStats(getStatsView());
+
+    if (HMG.favor.isFailed(state.favor)) {
+      finish(false);
+      return;
+    }
+    if (state.pendingFinish) {
+      finish(true);
+      return;
+    }
+    maybeStartRoachRound();
+  }
+
+  /**
+   * 检查 100 条弹幕是否全部走完；若蟑螂入侵还在进行，则延后到本轮结束后结算。
+   * @returns {void}
+   */
+  function checkGameCompletion() {
+    if (!state || !state.playing) {
+      return;
+    }
+    if (state.processed < state.timeline.length) {
+      return;
+    }
+    if (HMG.roach.isActive()) {
+      state.pendingFinish = true;
+      return;
+    }
+    finish(true);
+  }
+
+  /**
    * 创建一条运行时弹幕，绑定 DOM 气泡并加入待判定队列。
    * @param {{id:number, content:string, type:string, phase:number, audience:object}} data 时间轴数据
    * @returns {void}
@@ -262,6 +372,7 @@
     state.pending.push(entry);
     state.stats.total += 1;
     HMG.uiLive.updateStats(getStatsView());
+    maybeStartRoachRound();
   }
 
   /**
@@ -308,9 +419,7 @@
       finish(false);
       return;
     }
-    if (state.processed >= state.timeline.length) {
-      finish(true);
-    }
+    checkGameCompletion();
   }
 
   /**
@@ -423,8 +532,8 @@
 
     if (HMG.favor.isFailed(state.favor)) {
       finish(false);
-    } else if (state.processed >= state.timeline.length) {
-      finish(true);
+    } else {
+      checkGameCompletion();
     }
     return true;
   }
@@ -441,6 +550,7 @@
     state.playing = false;
     state.paused = false;
     stopLoop();
+    HMG.roach.stop();
     HMG.uiPanel.hideCombo();
     HMG.uiLive.updateStats(getStatsView());
 
@@ -472,6 +582,7 @@
    */
   function start() {
     stopLoop();
+    HMG.roach.reset();
 
     var timeline = buildTimeline();
     state = {
@@ -485,7 +596,10 @@
       pending: [],
       processed: 0,
       stats: { total: 0, done: 0, miss: 0, wrong: 0 },
-      favor: HMG.favor.createState()
+      favor: HMG.favor.createState(),
+      roachTargets: buildRoachTargets(),
+      roachRound: 0,
+      pendingFinish: false
     };
 
     HMG.uiPanel.reset();
@@ -504,6 +618,7 @@
     }
     state.paused = true;
     stopLoop();
+    HMG.roach.pause();
   }
 
   /**
@@ -516,6 +631,7 @@
     }
     state.paused = false;
     state.lastFrame = window.performance.now();
+    HMG.roach.resume();
     rafId = window.requestAnimationFrame(loop);
   }
 
@@ -536,6 +652,10 @@
     if (options && typeof options.onEnd === 'function') {
       callbacks.onEnd = options.onEnd;
     }
+    HMG.roach.init({
+      onKill: handleRoachKill,
+      onRoundEnd: handleRoachRoundEnd
+    });
   }
 
   HMG.game = {
