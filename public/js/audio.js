@@ -7,7 +7,11 @@
   'use strict';
 
   var CONFIG = window.GAME_CONFIG;
-  var bgm = null;
+  var bgmTracks = {};
+  var activeBgmId = '';
+  var bgmBaseVolume = 0.35;
+  var bgmFadeRaf = 0;
+  var bgmFadeToken = 0;
   var correctSfx = null;
   var wrongSfx = null;
   var whistleSfx = null;
@@ -15,6 +19,7 @@
   var drumbeatAudio = null;
   var footstepsAudio = null;
   var bgmDesired = false;
+  var bgmPaused = false;
   var roachLoopDesired = false;
   var initialized = false;
 
@@ -42,15 +47,71 @@
   }
 
   /**
-   * 尝试播放 BGM；若被浏览器拦截则保持“待播放”状态，等待首次交互补播。
+   * 取得当前选中的 BGM 音频对象。
+   * @returns {HTMLAudioElement|null} 当前曲目
+   */
+  function getActiveBgm() {
+    return bgmTracks[activeBgmId] || null;
+  }
+
+  /**
+   * 把 BGM 下拉框同步为当前曲目。
+   * @returns {void}
+   */
+  function syncBgmSelect() {
+    var select = document.getElementById('bgmSelect');
+    if (select) {
+      select.value = activeBgmId;
+    }
+  }
+
+  /**
+   * 取消尚未完成的 BGM 交叉淡入淡出。
+   * @returns {void}
+   */
+  function cancelBgmFade() {
+    bgmFadeToken += 1;
+    if (bgmFadeRaf) {
+      window.cancelAnimationFrame(bgmFadeRaf);
+      bgmFadeRaf = 0;
+    }
+  }
+
+  /**
+   * 暂停全部 BGM 轨道，并保留当前曲目的音量。
+   * @returns {void}
+   */
+  function pauseAllBgm() {
+    cancelBgmFade();
+    /* 逐轨暂停，只给当前曲目保留恢复音量。 */
+    Object.keys(bgmTracks).forEach(function (id) {
+      var track = bgmTracks[id];
+      track.pause();
+      track.volume = id === activeBgmId ? bgmBaseVolume : 0;
+    });
+  }
+
+  /**
+   * 尝试播放当前 BGM；若被浏览器拦截则保持“待播放”状态，等待首次交互补播。
    * @returns {void}
    */
   function playBgm() {
     bgmDesired = true;
-    if (!bgm) {
+    bgmPaused = false;
+    cancelBgmFade();
+    var active = getActiveBgm();
+    if (!active) {
       return;
     }
-    var promise = bgm.play();
+    /* 确保只有当前曲目在播放，其余轨道全部静音。 */
+    Object.keys(bgmTracks).forEach(function (id) {
+      if (id !== activeBgmId) {
+        bgmTracks[id].pause();
+        bgmTracks[id].volume = 0;
+      }
+    });
+    active.volume = bgmBaseVolume;
+    var promise = active.play();
     if (promise && typeof promise.catch === 'function') {
       promise.catch(ignoreRejection);
     }
@@ -61,9 +122,8 @@
    * @returns {void}
    */
   function pauseBgm() {
-    if (bgm && !bgm.paused) {
-      bgm.pause();
-    }
+    bgmPaused = true;
+    pauseAllBgm();
   }
 
   /**
@@ -73,6 +133,126 @@
   function resumeBgm() {
     if (bgmDesired) {
       playBgm();
+    }
+  }
+
+  /**
+   * 切换 BGM 曲目；正在播放时用 220ms 交叉淡入淡出，避免硬切。
+   * @param {string} trackId 曲目 id
+   * @returns {void}
+   */
+  function switchBgm(trackId) {
+    var id = String(trackId || '');
+    if (!bgmTracks[id]) {
+      syncBgmSelect();
+      return;
+    }
+    if (id === activeBgmId) {
+      syncBgmSelect();
+      return;
+    }
+
+    cancelBgmFade();
+    var previousId = activeBgmId;
+    var previous = getActiveBgm();
+    /* 先停掉可能残留在上一次淡入淡出中的其他轨道。 */
+    Object.keys(bgmTracks).forEach(function (key) {
+      if (key !== previousId) {
+        bgmTracks[key].pause();
+        bgmTracks[key].volume = 0;
+      }
+    });
+
+    activeBgmId = id;
+    syncBgmSelect();
+    var next = getActiveBgm();
+    if (!next) {
+      return;
+    }
+
+    if (!bgmDesired || bgmPaused || document.hidden) {
+      if (previous) {
+        previous.pause();
+        previous.volume = 0;
+      }
+      next.volume = bgmBaseVolume;
+      return;
+    }
+
+    try {
+      next.currentTime = 0;
+    } catch (error) {
+      /* 音频尚未 ready 时忽略电流设置失败。 */
+    }
+    next.volume = 0;
+    var playPromise = next.play();
+    if (playPromise && typeof playPromise.catch === 'function') {
+      playPromise.catch(ignoreRejection);
+    }
+
+    if (!previous || previous.paused) {
+      next.volume = bgmBaseVolume;
+      return;
+    }
+
+    previous.volume = bgmBaseVolume;
+    var token = ++bgmFadeToken;
+    var startedAt = window.performance.now();
+    /**
+     * 交叉淡入淡出的单帧回调。
+     * @param {number} now requestAnimationFrame 时间戳
+     * @returns {void}
+     */
+    function step(now) {
+      if (token !== bgmFadeToken) {
+        return;
+      }
+      var progress = Math.max(0, Math.min(1, (now - startedAt) / 220));
+      previous.volume = bgmBaseVolume * (1 - progress);
+      next.volume = bgmBaseVolume * progress;
+      if (progress < 1) {
+        bgmFadeRaf = window.requestAnimationFrame(step);
+        return;
+      }
+      bgmFadeRaf = 0;
+      previous.pause();
+      try {
+        previous.currentTime = 0;
+      } catch (error) {
+        /* 音频尚未 ready 时忽略电流设置失败。 */
+      }
+      previous.volume = 0;
+      next.volume = bgmBaseVolume;
+    }
+    bgmFadeRaf = window.requestAnimationFrame(step);
+  }
+
+  /**
+   * 读取当前 BGM 状态（自检/调试用）。
+   * @returns {{id:string, desired:boolean, paused:boolean, currentTime:number, volume:number, duration:number, readyState:number, loop:boolean}} 状态快照
+   */
+  function getBgmState() {
+    var active = getActiveBgm();
+    return {
+      id: activeBgmId,
+      desired: bgmDesired,
+      paused: active ? active.paused : true,
+      currentTime: active ? active.currentTime : 0,
+      volume: active ? active.volume : 0,
+      duration: active && isFinite(active.duration) ? active.duration : 0,
+      readyState: active ? active.readyState : 0,
+      loop: active ? active.loop : false
+    };
+  }
+
+  /**
+   * 处理 BGM 下拉框切换。
+   * @returns {void}
+   */
+  function handleBgmChange() {
+    var select = document.getElementById('bgmSelect');
+    if (select) {
+      switchBgm(select.value);
     }
   }
 
@@ -228,7 +408,24 @@
       return;
     }
     initialized = true;
-    bgm = createAudio('./public/audio/bgm.mp3', true, CONFIG.audio.bgmVolume);
+    bgmBaseVolume = CONFIG.audio.bgmVolume;
+    var tracks = CONFIG.bgmTracks || [];
+    activeBgmId = String(CONFIG.defaultBgm || (tracks[0] && tracks[0].id) || '');
+    /* 三首 BGM 全部预加载，切歌时才能即时交叉淡入。 */
+    tracks.forEach(function (track) {
+      var id = String(track.id);
+      bgmTracks[id] = createAudio(track.src, true, id === activeBgmId ? bgmBaseVolume : 0);
+    });
+    if (!bgmTracks[activeBgmId] && tracks.length) {
+      activeBgmId = String(tracks[0].id);
+      bgmTracks[activeBgmId].volume = bgmBaseVolume;
+    }
+    var bgmSelect = document.getElementById('bgmSelect');
+    if (bgmSelect) {
+      bgmSelect.value = activeBgmId;
+      bgmSelect.addEventListener('change', handleBgmChange);
+    }
+
     correctSfx = createAudio('./public/audio/correct.wav', false, CONFIG.audio.sfxVolume);
     wrongSfx = createAudio('./public/audio/wrong.wav', false, CONFIG.audio.sfxVolume);
 
@@ -248,6 +445,8 @@
     playBgm: playBgm,
     pauseBgm: pauseBgm,
     resumeBgm: resumeBgm,
+    switchBgm: switchBgm,
+    getBgmState: getBgmState,
     playCorrect: playCorrect,
     playWrong: playWrong,
     playWhistle: playWhistle,

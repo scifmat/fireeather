@@ -74,16 +74,28 @@
               </div>
             </div>
 
-            <!-- 皮肤切换：默认皮套二，选项对应三套直播画面 GIF -->
-            <div class="skin-switcher" id="skinSwitcher">
-              <label class="skin-switcher__label" for="skinSelect">画面</label>
-              <span class="skin-switcher__control">
-                <select class="skin-switcher__select" id="skinSelect" aria-label="切换直播画面皮套">
-                  <option value="1">皮套一</option>
-                  <option value="2" selected>皮套二</option>
-                  <option value="3">皮套三</option>
-                </select>
-              </span>
+            <!-- 画面与 BGM 选择器：共用胶囊样式，入侵时由底部区域统一覆盖 -->
+            <div class="stage-switchers" id="stageSwitchers">
+              <div class="stage-switcher bgm-switcher" id="bgmSwitcher">
+                <label class="stage-switcher__label" for="bgmSelect">BGM</label>
+                <span class="stage-switcher__control">
+                  <select class="stage-switcher__select" id="bgmSelect" aria-label="切换背景音乐">
+                    <option value="1" selected>正常</option>
+                    <option value="2">魔性</option>
+                    <option value="3">洗脑</option>
+                  </select>
+                </span>
+              </div>
+              <div class="stage-switcher skin-switcher" id="skinSwitcher">
+                <label class="stage-switcher__label" for="skinSelect">画面</label>
+                <span class="stage-switcher__control">
+                  <select class="stage-switcher__select" id="skinSelect" aria-label="切换直播画面皮套">
+                    <option value="1">皮套一</option>
+                    <option value="2" selected>皮套二</option>
+                    <option value="3">皮套三</option>
+                  </select>
+                </span>
+              </div>
             </div>
           </div>
         </div>
@@ -97,7 +109,15 @@
     <!-- ===== 右栏：主播卡 + 弹幕列表 + 输入栏 ===== -->
     <aside class="side-panel" aria-label="弹幕面板">
       <header class="anchor-card">
-        <img class="anchor-card__avatar" src="./public/images/anchor.png" alt="火羽ひのめ头像">
+        <a
+          class="anchor-card__avatar-link"
+          href="https://b23.tv/IPJdzrd"
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label="打开火羽ひのめ的B站个人空间"
+          title="打开B站个人空间">
+          <img class="anchor-card__avatar" src="./public/images/anchor.png" alt="火羽ひのめ头像">
+        </a>
         <div class="anchor-card__meta">
           <div class="anchor-card__name">火羽ひのめ</div>
           <div class="anchor-card__uid">UID：2094031249</div>
@@ -140,7 +160,7 @@
         <li class="rule-item">黑粉弹幕点了加好感度。</li>
         <li class="rule-item">漏掉会上到主播弹幕机，并扣好感度。</li>
         <li class="rule-item">误伤正常观众也扣好感度。</li>
-        <li class="rule-item">直播画面底部会不定期钻进蟑螂：拍掉 +1，跑掉扣 0.5。</li>
+        <li class="rule-item">警惕随时蟑螂，拍掉+1好感度，跑掉-0.5。</li>
       </ol>
       <p class="tutorial__goal">好感度归零即失职，撑过 100 条弹幕即守护成功。</p>
       <div class="tutorial__actions">

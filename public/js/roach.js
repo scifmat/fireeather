@@ -76,14 +76,14 @@
   }
 
   /**
-   * 判断坐标是否落在皮肤下拉等交互控件上（这些控件保留正常指针，不参与拍打）。
+   * 判断坐标是否落在画面/BGM 下拉等交互控件上（这些控件保留正常指针，不参与拍打）。
    * @param {number} x 视口坐标 X
    * @param {number} y 视口坐标 Y
    * @returns {boolean} 是否应跳过拍打
    */
   function isInteractivePoint(x, y) {
     var element = document.elementFromPoint(x, y);
-    return !!(element && element.closest && element.closest('.skin-switcher'));
+    return !!(element && element.closest && element.closest('.stage-switcher'));
   }
 
   /**

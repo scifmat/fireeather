@@ -255,15 +255,19 @@
   }
 
   /**
-   * 生成本局三轮蟑螂入侵的触发弹幕数（在 config 的区间内随机，互不重叠）。
-   * @returns {number[]} 三轮触发的弹幕总数
+   * 按 roundCount 生成本局蟑螂入侵的触发弹幕数（在 config 的区间内随机，互不重叠）。
+   * @returns {number[]} 本局各轮触发的弹幕总数
    */
   function buildRoachTargets() {
     var roachConfig = CONFIG.roach;
     if (!roachConfig || !Array.isArray(roachConfig.triggerRanges)) {
       return [];
     }
-    var count = roachConfig.roundCount || roachConfig.triggerRanges.length;
+    /* roundCount 为 0 时表示本局关闭蟑螂，不能再用 || 回退成默认轮数。 */
+    var count = typeof roachConfig.roundCount === 'number'
+      ? roachConfig.roundCount
+      : roachConfig.triggerRanges.length;
+    count = Math.max(0, Math.min(count, roachConfig.triggerRanges.length));
     /* 为每一轮在配置区间内独立取一个触发弹幕数。 */
     return roachConfig.triggerRanges.slice(0, count).map(function (range) {
       return randomInt(range.from, range.to);

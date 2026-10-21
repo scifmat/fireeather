@@ -25,7 +25,7 @@
     { name: '打call', cost: '2电池' },
     { name: '鼓鼓掌', cost: '5电池' },
     { name: '你真好看', cost: '10电池' },
-    { name: '大航海', cost: '40' }
+    { name: '大航海', cost: '198元' }
   ];
 
   var dom = {};
