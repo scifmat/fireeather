@@ -32,6 +32,12 @@ window.GAME_CONFIG = {
     bgmVolume: 0.35,
     sfxVolume: 0.8
   },
+  bgmTracks: [
+    { id: "1", label: "正常", src: "./public/audio/bgm_1.mp3" },
+    { id: "2", label: "魔性", src: "./public/audio/bgm_2.wav" },
+    { id: "3", label: "洗脑", src: "./public/audio/bgm_3.wav" }
+  ],
+  defaultBgm: "1",
   skins: [
     { id: "1", label: "皮套一", src: "./public/images/home_screen_1.gif", backdrop: "./public/images/home_screen_1_bg.webp" },
     { id: "2", label: "皮套二", src: "./public/images/home_screen_2.gif", backdrop: "./public/images/home_screen_2_bg.webp" },
